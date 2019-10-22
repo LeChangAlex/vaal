@@ -115,8 +115,8 @@ class Solver:
                 labeled_preds = discriminator(mu)
                 unlabeled_preds = discriminator(unlab_mu)
                 
-                lab_real_preds = torch.cat(labels, torch.zeros(labels.size(0)), dim=1)
-                unlab_real_preds = torch.cat(torch.zeros_like(labels), torch.ones(labels.size(0)), dim=1)
+                lab_real_preds = torch.cat((labels, torch.zeros((labels.size(0), 1))), dim=1)
+                unlab_real_preds = torch.cat((torch.zeros_like(labels), torch.ones((labels.size(0), 1))), dim=1)
                     
                 if self.args.cuda:
                     lab_real_preds = lab_real_preds.cuda()

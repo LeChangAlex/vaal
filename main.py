@@ -7,6 +7,7 @@ import numpy as np
 import argparse
 import random
 import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 from custom_datasets import *
 import model
