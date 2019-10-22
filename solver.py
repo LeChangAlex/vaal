@@ -55,8 +55,6 @@ class Solver:
         task_change_lr_iter = self.args.task_train_iterations // 25
         adv_change_lr_iter = self.args.adv_train_iterations // 25
 
-        final_accuracy = self.test(task_model)
-        print("======= Final task test accuracy: {} =========".format(final_accuracy))
 
 
         for iter_count in tqdm(range(self.args.adv_train_iterations)):
@@ -184,6 +182,9 @@ class Solver:
 
                 print('Current vae model loss: {:.4f}'.format(total_vae_loss.item()))
                 print('Current discriminator model loss: {:.4f}'.format(dsc_loss.item()))
+
+        final_accuracy = self.test(task_model)
+        print("======= Final task test accuracy: {} =========".format(final_accuracy))
 
         return final_accuracy, vae, discriminator
 
