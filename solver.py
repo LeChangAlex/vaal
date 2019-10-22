@@ -55,7 +55,12 @@ class Solver:
         task_change_lr_iter = self.args.task_train_iterations // 25
         adv_change_lr_iter = self.args.adv_train_iterations // 25
 
-        for iter_count in tqdm(range(self.args.task_train_iterations)):
+        final_accuracy = self.test(task_model)
+        print("======= Final task test accuracy: {} =========".format(final_accuracy))
+
+
+        for iter_count in tqdm(range(self.args.adv_train_iterations)):
+
 
             # adaptive lr
             if iter_count is not 0 and iter_count % adv_change_lr_iter == 0:
@@ -70,7 +75,6 @@ class Solver:
                 unlabeled_imgs = unlabeled_imgs.cuda()
                 labels = labels.cuda()
 
-
             # task_model step
             preds = task_model(labeled_imgs)
             task_loss = self.ce_loss(preds, labels)
@@ -78,15 +82,9 @@ class Solver:
             task_loss.backward()
             optim_task_model.step()
 
-            if iter_count % 1000 == 0:
-                print('Current training iteration: {}'.format(iter_count))
-                print('Current task model loss: {:.4f}'.format(task_loss.item()))
-
-        final_accuracy = self.test(task_model)
-        print("======= Final task test accuracy: {} =========".format(final_accuracy))
-
-
-        for iter_count in tqdm(range(self.args.adv_train_iterations)):
+            # if iter_count % 1000 == 0:
+            #     print('Current training iteration: {}'.format(iter_count))
+            #     print('Current task model loss: {:.4f}'.format(task_loss.item()))
 
             # adaptive lr
             if iter_count is not 0 and iter_count % adv_change_lr_iter == 0:
@@ -159,10 +157,10 @@ class Solver:
                     lab_real_preds = lab_real_preds.cuda()
                     unlab_fake_preds = unlab_fake_preds.cuda()
                 
-                # dsc_loss = self.bce_loss(labeled_preds, lab_real_preds) + \
-                #         self.bce_loss(unlabeled_preds, unlab_fake_preds)
+                dsc_loss = self.bce_loss(labeled_preds, lab_real_preds) + \
+                        self.bce_loss(unlabeled_preds, unlab_fake_preds)
 
-                dsc_loss = self.bce_loss(labeled_)
+                # dsc_loss = self.bce_loss(labeled_preds, )
 
                 optim_discriminator.zero_grad()
                 dsc_loss.backward()
@@ -182,6 +180,8 @@ class Solver:
             # print(iter_count)
             if iter_count % 1000 == 0:
                 print('Current training iteration: {}'.format(iter_count))
+                print('Current task model loss: {:.4f}'.format(task_loss.item()))
+
                 print('Current vae model loss: {:.4f}'.format(total_vae_loss.item()))
                 print('Current discriminator model loss: {:.4f}'.format(dsc_loss.item()))
 
