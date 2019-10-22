@@ -86,7 +86,7 @@ class VAE(nn.Module):
 
 class Discriminator(nn.Module):
     """Adversary architecture(Discriminator) for WAE-GAN."""
-    def __init__(self, z_dim=10):
+    def __init__(self, z_dim=10, n_classes=1):
         super(Discriminator, self).__init__()
         self.z_dim = z_dim
         self.net = nn.Sequential(
@@ -98,8 +98,8 @@ class Discriminator(nn.Module):
             nn.ReLU(True),
             nn.Linear(512, 512),
             nn.ReLU(True),
-            nn.Linear(512, 1),
-            nn.Sigmoid()
+            nn.Linear(512, n_classes),
+            nn.Softmax()
         )
         self.weight_init()
 

@@ -82,7 +82,7 @@ def main(args):
         # re initialize and retrain the models
         task_model = vgg.vgg16_bn(num_classes=args.num_classes)
         vae = model.VAE(args.latent_dim)
-        discriminator = model.Discriminator(args.latent_dim)
+        discriminator = model.Discriminator(args.latent_dim, args.num_classes + 1)
 
         unlabeled_indices = np.setdiff1d(list(all_indices), current_indices)
         unlabeled_sampler = data.sampler.SubsetRandomSampler(unlabeled_indices)

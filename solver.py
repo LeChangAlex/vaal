@@ -117,8 +117,8 @@ class Solver:
                 labeled_preds = discriminator(mu)
                 unlabeled_preds = discriminator(unlab_mu)
                 
-                lab_real_preds = torch.ones(labeled_imgs.size(0))
-                unlab_real_preds = torch.ones(unlabeled_imgs.size(0))
+                lab_real_preds = torch.cat(labels, torch.zeros(labels.size(0)), dim=1)
+                unlab_real_preds = torch.cat(torch.zeros_like(labels), torch.ones(labels.size(0)), dim=1)
                     
                 if self.args.cuda:
                     lab_real_preds = lab_real_preds.cuda()
@@ -159,8 +159,10 @@ class Solver:
                     lab_real_preds = lab_real_preds.cuda()
                     unlab_fake_preds = unlab_fake_preds.cuda()
                 
-                dsc_loss = self.bce_loss(labeled_preds, lab_real_preds) + \
-                        self.bce_loss(unlabeled_preds, unlab_fake_preds)
+                # dsc_loss = self.bce_loss(labeled_preds, lab_real_preds) + \
+                #         self.bce_loss(unlabeled_preds, unlab_fake_preds)
+
+                dsc_loss = self.bce_loss(labeled_)
 
                 optim_discriminator.zero_grad()
                 dsc_loss.backward()
