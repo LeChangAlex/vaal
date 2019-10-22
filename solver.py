@@ -35,7 +35,7 @@ class Solver:
                     yield img
 
 
-    def train(self, querry_dataloader, task_model, vae, discriminator, unlabeled_dataloader):
+    def train(self, querry_dataloader, task_model, vae, discriminator, unlabeled_dataloader, args):
         labeled_data = self.read_data(querry_dataloader)
         unlabeled_data = self.read_data(unlabeled_dataloader, labels=False)
 
@@ -113,7 +113,7 @@ class Solver:
                 labeled_preds = discriminator(mu)
                 unlabeled_preds = discriminator(unlab_mu)
 
-                labels_onehot = torch.Tensor(labels.size(0), labels.size(1))
+                labels_onehot = torch.zeros((labels.size(0), args.num_classes))
                 labels_onehot.scatter_(1, labels, 1)
 
                 lab_real_preds = torch.cat((labels_onehot, torch.zeros((labels.size(0), 1))), dim=1)

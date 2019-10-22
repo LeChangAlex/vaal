@@ -96,7 +96,8 @@ def main(args):
                                                task_model, 
                                                vae, 
                                                discriminator,
-                                               unlabeled_dataloader)
+                                               unlabeled_dataloader,
+                                               args)
 
 
         print('Final accuracy with {}% of data is: {:.2f}'.format(int(split*100), acc))
