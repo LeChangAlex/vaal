@@ -33,7 +33,7 @@ def main(args):
 
         args.num_images = 50000
         args.budget = 2500
-        args.initial_budget = 5000
+        args.initial_budget = 20000
         args.num_classes = 10
     elif args.dataset == 'cifar100':
         test_dataloader = data.DataLoader(
