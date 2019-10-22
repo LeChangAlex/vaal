@@ -52,11 +52,15 @@ class Solver:
             discriminator = discriminator.cuda()
             task_model = task_model.cuda()
         
-        change_lr_iter = self.args.train_iterations // 25
+        task_change_lr_iter = self.args.task_train_iterations // 25
+        adv_change_lr_iter = self.args.adv_train_iterations // 25
 
-        for iter_count in tqdm(range(self.args.train_iterations)):
-            for param in optim_task_model.param_groups:
-                param['lr'] = param['lr'] * 0.9
+        for iter_count in tqdm(range(self.args.task_train_iterations)):
+
+            # adaptive lr
+            if iter_count is not 0 and iter_count % adv_change_lr_iter == 0:
+                for param in optim_task_model.param_groups:
+                    param['lr'] = param['lr'] * 0.9
 
             labeled_imgs, labels = next(labeled_data)
             unlabeled_imgs = next(unlabeled_data)
@@ -82,8 +86,10 @@ class Solver:
         print("======= Final task test accuracy: {} =========".format(final_accuracy))
 
 
-        for iter_count in tqdm(range(self.args.train_iterations)):
-            if iter_count is not 0 and iter_count % change_lr_iter == 0:
+        for iter_count in tqdm(range(self.args.adv_train_iterations)):
+
+            # adaptive lr
+            if iter_count is not 0 and iter_count % adv_change_lr_iter == 0:
                 for param in optim_vae.param_groups:
                     param['lr'] = param['lr'] * 0.9
     
