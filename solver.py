@@ -7,7 +7,7 @@ import numpy as np
 from sklearn.metrics import accuracy_score
 
 import sampler
-
+from tqdm import tqdm
 
 
 
@@ -54,13 +54,39 @@ class Solver:
         
         change_lr_iter = self.args.train_iterations // 25
 
-        for iter_count in range(self.args.train_iterations):
+        for iter_count in tqdm(range(self.args.train_iterations)):
+            for param in optim_task_model.param_groups:
+                param['lr'] = param['lr'] * 0.9
+
+            labeled_imgs, labels = next(labeled_data)
+            unlabeled_imgs = next(unlabeled_data)
+
+            if self.args.cuda:
+                labeled_imgs = labeled_imgs.cuda()
+                unlabeled_imgs = unlabeled_imgs.cuda()
+                labels = labels.cuda()
+
+
+            # task_model step
+            preds = task_model(labeled_imgs)
+            task_loss = self.ce_loss(preds, labels)
+            optim_task_model.zero_grad()
+            task_loss.backward()
+            optim_task_model.step()
+
+            if iter_count % 1000 == 0:
+                print('Current training iteration: {}'.format(iter_count))
+                print('Current task model loss: {:.4f}'.format(task_loss.item()))
+
+        final_accuracy = self.test(task_model)
+        print("======= Final task test accuracy: {} =========".format(final_accuracy))
+
+
+        for iter_count in tqdm(range(self.args.train_iterations)):
             if iter_count is not 0 and iter_count % change_lr_iter == 0:
                 for param in optim_vae.param_groups:
                     param['lr'] = param['lr'] * 0.9
     
-                for param in optim_task_model.param_groups:
-                    param['lr'] = param['lr'] * 0.9 
 
                 for param in optim_discriminator.param_groups:
                     param['lr'] = param['lr'] * 0.9 
@@ -73,12 +99,6 @@ class Solver:
                 unlabeled_imgs = unlabeled_imgs.cuda()
                 labels = labels.cuda()
 
-            # task_model step
-            preds = task_model(labeled_imgs)
-            task_loss = self.ce_loss(preds, labels)
-            optim_task_model.zero_grad()
-            task_loss.backward()
-            optim_task_model.step()
 
             # VAE step
             for count in range(self.args.num_vae_steps):
@@ -115,6 +135,8 @@ class Solver:
                         unlabeled_imgs = unlabeled_imgs.cuda()
                         labels = labels.cuda()
 
+
+
             # Discriminator step
             for count in range(self.args.num_adv_steps):
                 with torch.no_grad():
@@ -149,14 +171,12 @@ class Solver:
                         labels = labels.cuda()
 
                 
-
+            # print(iter_count)
             if iter_count % 1000 == 0:
                 print('Current training iteration: {}'.format(iter_count))
-                print('Current task model loss: {:.4f}'.format(task_loss.item()))
                 print('Current vae model loss: {:.4f}'.format(total_vae_loss.item()))
                 print('Current discriminator model loss: {:.4f}'.format(dsc_loss.item()))
 
-        final_accuracy = self.test(task_model)
         return final_accuracy, vae, discriminator
 
 
