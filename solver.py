@@ -53,11 +53,11 @@ class Solver:
             task_model = task_model.cuda()
         
         task_change_lr_iter = self.args.task_train_iterations // 25
-        adv_change_lr_iter = self.args.adv_train_iterations // 25
+        adv_change_lr_iter = self.args.adv_train_iterations // 2
 
 
 
-        for iter_count in tqdm(range(self.args.adv_train_iterations)):
+        for iter_count in range(self.args.adv_train_iterations):
 
 
             # adaptive lr
@@ -75,6 +75,10 @@ class Solver:
 
             # task_model step
             preds = task_model(labeled_imgs)
+            
+            # print(labels)
+
+
             task_loss = self.ce_loss(preds, labels)
             optim_task_model.zero_grad()
             task_loss.backward()
@@ -113,18 +117,25 @@ class Solver:
                 labeled_preds = discriminator(mu)
                 unlabeled_preds = discriminator(unlab_mu)
 
-                labels_onehot = torch.zeros((labels.size(0), args.num_classes))
-                labels_onehot.scatter_(1, labels, 1)
+                
+                #labels_onehot = torch.zeros((labels.size(0), args.num_classes))
+                #labels_onehot.scatter_(1, labels.cpu().unsqueeze(1), 1)
 
-                lab_real_preds = torch.cat((labels_onehot, torch.zeros((labels.size(0), 1))), dim=1)
-                unlab_real_preds = torch.cat((torch.zeros_like(labels_onehot), torch.ones((labels.size(0), 1))), dim=1)
-                    
+                #lab_real_preds = torch.cat((labels_onehot, torch.zeros((labels.size(0), 1))), dim=1)
+                #unlab_real_preds = torch.cat((torch.zeros_like(labels_onehot), torch.ones((labels.size(0), 1))), dim=1)
+                 
+                lab_real_preds = labels
+                unlab_real_preds = torch.ones(unlabeled_preds.size(0), dtype=torch.long) * args.num_classes
+
                 if self.args.cuda:
                     lab_real_preds = lab_real_preds.cuda()
                     unlab_real_preds = unlab_real_preds.cuda()
-
-                dsc_loss = self.bce_loss(labeled_preds, lab_real_preds) + \
-                        self.bce_loss(unlabeled_preds, unlab_real_preds)
+                
+                #print(labeled_preds.shape, lab_real_preds.shape, unlabeled_preds.shape, unlab_real_preds.shape)
+                
+                
+                dsc_loss = self.ce_loss(labeled_preds, lab_real_preds) + \
+                        self.ce_loss(unlabeled_preds, unlab_real_preds)
                 total_vae_loss = unsup_loss + transductive_loss + self.args.adversary_param * dsc_loss
                 optim_vae.zero_grad()
                 total_vae_loss.backward()
@@ -151,15 +162,15 @@ class Solver:
                 labeled_preds = discriminator(mu)
                 unlabeled_preds = discriminator(unlab_mu)
                 
-                lab_real_preds = torch.ones(labeled_imgs.size(0))
-                unlab_fake_preds = torch.zeros(unlabeled_imgs.size(0))
+                lab_real_preds = labels
+                unlab_fake_preds = torch.ones(unlabeled_preds.size(0), dtype=torch.long) * args.num_classes
 
                 if self.args.cuda:
                     lab_real_preds = lab_real_preds.cuda()
                     unlab_fake_preds = unlab_fake_preds.cuda()
                 
-                dsc_loss = self.bce_loss(labeled_preds, lab_real_preds) + \
-                        self.bce_loss(unlabeled_preds, unlab_fake_preds)
+                dsc_loss = self.ce_loss(labeled_preds, lab_real_preds) + \
+                        self.ce_loss(unlabeled_preds, unlab_fake_preds)
 
                 # dsc_loss = self.bce_loss(labeled_preds, )
 
@@ -178,16 +189,16 @@ class Solver:
                         labels = labels.cuda()
 
                 
-            # print(iter_count)
-            if iter_count % 1000 == 0:
+            #print(iter_count)
+            if iter_count % 200 == 0:
                 print('Current training iteration: {}'.format(iter_count))
                 print('Current task model loss: {:.4f}'.format(task_loss.item()))
 
                 print('Current vae model loss: {:.4f}'.format(total_vae_loss.item()))
-                print('Current discriminator model loss: {:.4f}'.format(dsc_loss.item()))
+                print('Current discriminator model loss: {:.4f}'.format(dsc_loss.item()), flush=True)
 
         final_accuracy = self.test(task_model)
-        print("======= Final task test accuracy: {} =========".format(final_accuracy))
+        print("======= Final task test accuracy: {} =========".format(final_accuracy), flush=True)
 
         return final_accuracy, vae, discriminator
 
